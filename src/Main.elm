@@ -1,9 +1,15 @@
 module Main exposing (main)
 
+import Css exposing (..)
 import Date exposing (Date)
 import Dict exposing (Dict)
 import Html exposing (Html)
+import Html.Attributes as Html
 import Html.Events as Html
+
+
+styles =
+    asPairs >> Html.style
 
 
 main =
@@ -192,7 +198,18 @@ viewFull id mail =
 
 viewTag : String -> String -> Html Msg
 viewTag tag content =
-    Html.div []
-        [ Html.div [] [ Html.text (tag ++ ":") ]
+    Html.div
+        [ styles
+            [ displayFlex
+            , flexFlow1 row
+            ]
+        ]
+        [ Html.div
+            [ styles
+                [ fontWeight bold
+                , width (Css.rem 6)
+                ]
+            ]
+            [ Html.text (tag ++ ":") ]
         , Html.div [] [ Html.text content ]
         ]
