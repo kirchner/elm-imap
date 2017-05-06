@@ -1,7 +1,9 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Css exposing (..)
 import Date exposing (Date)
+import Json.Decode exposing (..)
+import Json.Decode.Pipeline exposing (..)
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as Html
@@ -45,6 +47,16 @@ type alias Mail =
     }
 
 
+decodeMail : Decoder Mail
+decodeMail =
+    decode Mail
+        |> requiredAt [ "envelope", "from", "address" ] string
+        |> requiredAt [ "envelope", "to", "address" ] string
+        |> hardcoded []
+        |> requiredAt [ "envelope", "subject" ] string
+        |> requiredAt [ "envelope", "body" ] string
+
+
 type State
     = Short
     | Middle
@@ -71,13 +83,8 @@ type alias Body =
 
 defaultModel : Model
 defaultModel =
-    { mails =
-        Dict.fromList
-            [ ( 0, ( mail, Short ) )
-            , ( 1, ( mail, Short ) )
-            , ( 2, ( mail, Short ) )
-            ]
-    , nextId = 3
+    { mails = Dict.empty
+    , nextId = firstId
     }
 
 
@@ -86,7 +93,8 @@ defaultModel =
 
 
 type Msg
-    = SetView State Int
+    = Add (Result String Mail)
+    | SetView State Int
 
 
 init : ( Model, Cmd Msg )
@@ -97,6 +105,18 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Add result ->
+            case result of
+                Ok mail ->
+                    { model
+                        | mails = Dict.insert model.nextId ( mail, Short ) model.mails
+                        , nextId = 1 + model.nextId
+                    }
+                        ! []
+
+                Err error ->
+                    Debug.crash error
+
         SetView newState id ->
             { model
                 | mails =
@@ -105,9 +125,13 @@ update msg model =
                 ! []
 
 
+port addMail : (Value -> msg) -> Sub msg
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ addMail (Add << decodeValue decodeMail) ]
 
 
 
