@@ -1,5 +1,9 @@
 {
   "name"    : "elm-electron-todomvc",
   "version" : "0.1.0",
-  "main"    : "electron-start.js"
+  "main"    : "electron-start.js",
+  "dependencies": {
+    "emailjs-imap-client": "^2.0.6",
+    "emailjs-tcp-socket": "^1.0.2"
+  }
 }
