@@ -8,6 +8,9 @@
   <script>window.Elm = require('./elm.js');</script>
 </head>
 
+<script type="text/javascript" src="./secrets.js">
+</script>
+
 <script type="text/javascript">
   var ImapClient, SmtpClient;
   if (window && window.process && window.process.type) {
@@ -15,12 +18,9 @@
   } else {
     document.write('<script src="socket.io/socket.io.js"></scr' + 'ipt>');
   }
-  var client = new ImapClient("localhost", 143, {
+  var client = new ImapClient(server, 143, {
     useSecureTransport: false,
-    auth: {
-      user: "…", /* TODO: provide correct content */
-      pass: "…" /* TODO: ^^^^ */
-    },
+    auth: auth,  // see ./secrets.js
   });
 
   client.onerror = function(err) {
