@@ -12,6 +12,8 @@
 </script>
 
 <script type="text/javascript">
+  var emails = null;
+
   var ImapClient, SmtpClient;
   if (window && window.process && window.process.type) {
     ImapClient = require("emailjs-imap-client");
@@ -28,8 +30,8 @@
   };
 
   client.connect().then(() => {
-    client.listMailboxes().then((mailboxes) => {
-      console.log(mailboxes);
+    client.listMessages("INBOX", "1:10", ["uid","flags", "envelope", "body[]"]).then((messages) => {
+      emails = messages;
     }).then(() => {
       client.logout();
     });
@@ -40,7 +42,16 @@
 </body>
 
 <script type="text/javascript">
-  var todomvc = Elm.Main.fullscreen();
+  var app = Elm.Main.fullscreen();
+  var poll = function() {
+    if (emails == null) {
+      setTimeout(poll, 100);
+    } else {
+      console.log(emails[0]);
+      app.ports.addMail.send(emails[0]);
+    }
+  };
+  poll();
 </script>
 
 <script type="text/javascript" src="js/vendor.js"></script>
