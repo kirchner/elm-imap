@@ -149,40 +149,81 @@ viewMail ( id, ( mail, state ) ) =
     in
         Html.div
             [ styles
-                [ opacity (if seen then (num 0.7) else (num 1)) ]
+                [ opacity
+                    (if seen then
+                        (num 0.7)
+                     else
+                        (num 1)
+                    )
+                , padding (px 5)
+                ]
             ]
-            [ case state of
-                Short ->
-                    viewShort id mail
+            [ Html.div
+                [ styles
+                    [ backgroundColor (hex "#ccc")
+                    , padding (px 8)
+                    ]
+                ]
+                [ case state of
+                    Short ->
+                        viewShort id mail
 
-                Middle ->
-                    viewMiddle id mail
+                    Middle ->
+                        viewMiddle id mail
 
-                Full ->
-                    viewFull id mail
+                    Full ->
+                        viewFull id mail
+                ]
             ]
 
 
 viewShort : Int -> Mail -> Html Msg
 viewShort id mail =
     Html.div
-        [ Html.onClick (SetView Middle id) ]
+        [ Html.onClick (SetView Middle id)
+        ]
+        [ shortHeader mail
+        ]
+
+
+shortHeader_ mail =
+    Html.div []
         [ viewTag "from" mail.from
         , viewTag "to" mail.to
         , viewTag "subject" mail.subject
         ]
 
 
+shortHeader mail =
+    Html.div []
+        [ Html.div
+            [ styles
+                [ fontSize (px 14)
+                , color (rgba 0 0 0 0.52)
+                ]
+            ]
+            [ Html.text mail.from
+            ]
+        , Html.div
+            [ styles
+                [ fontSize (px 16)
+                , color (rgba 0 0 0 0.87)
+                , fontWeight bold
+                ]
+            ]
+            [ Html.text
+                (if mail.subject == "" then
+                    "(no subject)"
+                 else
+                    mail.subject
+                )
+            ]
+        ]
+
+
 viewMiddle : Int -> Mail -> Html Msg
 viewMiddle id mail =
     let
-        shortHeader =
-            Html.div []
-                [ viewTag "from" mail.from
-                , viewTag "to" mail.to
-                , viewTag "subject" mail.subject
-                ]
-
         shortBody =
             mail.body
                 |> String.split "\n\n"
@@ -192,7 +233,7 @@ viewMiddle id mail =
     in
         Html.div
             [ Html.onClick (SetView Full id) ]
-            [ shortHeader
+            [ shortHeader mail
             , shortBody
             ]
 
