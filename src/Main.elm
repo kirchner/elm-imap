@@ -48,35 +48,18 @@ type alias Mail =
     }
 
 
-decodeMail : Decoder Mail
-decodeMail =
-    decode Mail
-        |> requiredAt [ "envelope", "from" ]
-            (map (List.head >> Maybe.withDefault "")
-                (list (at [ "address" ] string))
-            )
-        |> requiredAt [ "envelope", "sender" ]
-            (map (List.head >> Maybe.withDefault "")
-                (list (at [ "address" ] string))
-            )
-        |> hardcoded []
-        |> hardcoded ""
-        |> requiredAt [ "body[]" ] string
-        |> requiredAt [ "flags" ] (list string)
-
-
-type State
-    = Short
-    | Middle
-    | Full
-
-
 type alias Address =
     String
 
 
 type alias Body =
     String
+
+
+type State
+    = Short
+    | Middle
+    | Full
 
 
 defaultModel : Model
@@ -180,20 +163,87 @@ viewMail ( id, ( mail, state ) ) =
 viewShort : Int -> Mail -> Html Msg
 viewShort id mail =
     Html.div
-        [ Html.onClick (SetView Middle id)
-        ]
-        [ shortHeader mail
-        ]
+        [ Html.onClick (SetView Middle id) ]
+        [ shortHeader mail ]
 
 
-shortHeader_ mail =
-    Html.div []
-        [ viewTag "from" mail.from
-        , viewTag "to" mail.to
-        , viewTag "subject" mail.subject
-        ]
+viewMiddle : Int -> Mail -> Html Msg
+viewMiddle id mail =
+    let
+        fullBody =
+            Html.div
+                [ styles
+                    [ backgroundColor (rgba 255 255 255 255)
+                    , color (rgba 0 0 0 0.87)
+                    , marginLeft (px -8)
+                    , marginRight (px -8)
+                    , marginTop (px 15)
+                    , paddingTop (px 20)
+                    , paddingBottom (px 60)
+                    , maxHeight (px 240)
+                    , overflow hidden
+                    ]
+                ]
+                (mail.body
+                    |> String.split "\n\n"
+                    |> List.map (\s -> Html.p [] [ Html.text s ])
+                )
+    in
+        Html.div
+            [ Html.onClick (SetView Full id) ]
+            [ shortHeader mail
+            , fullBody
+            ]
 
 
+viewFull : Int -> Mail -> Html Msg
+viewFull id mail =
+    let
+        fullHeader =
+            Html.div
+                [ styles
+                    [ fontSize (px 12)
+                    , color (rgba 0 0 0 0.54)
+                    , paddingTop (px 5)
+                    ]
+                ]
+                ([ viewTag "from" mail.from
+                 , viewTag "to" mail.to
+                 , viewTag "subject" mail.subject
+                 ]
+                    ++ ccs
+                )
+
+        ccs =
+            mail.ccs
+                |> List.map (viewTag "cc")
+
+        fullBody =
+            Html.div
+                [ styles
+                    [ backgroundColor (rgba 255 255 255 255)
+                    , color (rgba 0 0 0 0.87)
+                    , marginLeft (px -8)
+                    , marginRight (px -8)
+                    , marginTop (px 15)
+                    , paddingTop (px 20)
+                    , paddingBottom (px 60)
+                    ]
+                ]
+                (mail.body
+                    |> String.split "\n\n"
+                    |> List.map (\s -> Html.p [] [ Html.text s ])
+                )
+    in
+        Html.div
+            [ Html.onClick (SetView Short id) ]
+            [ shortHeader mail
+            , fullHeader
+            , fullBody
+            ]
+
+
+shortHeader : Mail -> Html Msg
 shortHeader mail =
     Html.div []
         [ Html.div
@@ -202,8 +252,7 @@ shortHeader mail =
                 , color (rgba 0 0 0 0.52)
                 ]
             ]
-            [ Html.text mail.from
-            ]
+            [ Html.text mail.from ]
         , Html.div
             [ styles
                 [ fontSize (px 16)
@@ -219,53 +268,6 @@ shortHeader mail =
                 )
             ]
         ]
-
-
-viewMiddle : Int -> Mail -> Html Msg
-viewMiddle id mail =
-    let
-        shortBody =
-            mail.body
-                |> String.split "\n\n"
-                |> List.head
-                |> Maybe.withDefault ""
-                |> (\s -> Html.p [] [ Html.text s ])
-    in
-        Html.div
-            [ Html.onClick (SetView Full id) ]
-            [ shortHeader mail
-            , shortBody
-            ]
-
-
-viewFull : Int -> Mail -> Html Msg
-viewFull id mail =
-    let
-        fullHeader =
-            Html.div []
-                ([ viewTag "from" mail.from
-                 , viewTag "to" mail.to
-                 , viewTag "subject" mail.subject
-                 ]
-                    ++ ccs
-                )
-
-        ccs =
-            mail.ccs
-                |> List.map (viewTag "cc")
-
-        fullBody =
-            Html.div []
-                (mail.body
-                    |> String.split "\n\n"
-                    |> List.map (\s -> Html.p [] [ Html.text s ])
-                )
-    in
-        Html.div
-            [ Html.onClick (SetView Short id) ]
-            [ fullHeader
-            , fullBody
-            ]
 
 
 viewTag : String -> String -> Html Msg
@@ -285,3 +287,24 @@ viewTag tag content =
             [ Html.text (tag ++ ":") ]
         , Html.div [] [ Html.text content ]
         ]
+
+
+
+{- decoder -}
+
+
+decodeMail : Decoder Mail
+decodeMail =
+    decode Mail
+        |> requiredAt [ "envelope", "from" ]
+            (map (List.head >> Maybe.withDefault "")
+                (list (at [ "address" ] string))
+            )
+        |> requiredAt [ "envelope", "sender" ]
+            (map (List.head >> Maybe.withDefault "")
+                (list (at [ "address" ] string))
+            )
+        |> hardcoded []
+        |> hardcoded ""
+        |> requiredAt [ "body[]" ] string
+        |> requiredAt [ "flags" ] (list string)
