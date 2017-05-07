@@ -44,6 +44,7 @@ type alias Mail =
     , ccs : List Address
     , subject : String
     , body : Body
+    , flags : List String
     }
 
 
@@ -61,22 +62,13 @@ decodeMail =
         |> hardcoded []
         |> hardcoded ""
         |> requiredAt [ "body[]" ] string
+        |> requiredAt [ "flags" ] (list string)
 
 
 type State
     = Short
     | Middle
     | Full
-
-
-mail : Mail
-mail =
-    { from = "foo@bar"
-    , to = "bar@foo"
-    , ccs = [ "him", "her" ]
-    , subject = "some subject"
-    , body = "aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf\n\nadfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf aldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf jjjjjjjjjjjjjjaldkjf adfka ldfkja dlfkjad lfka dlfkja dlfkja dlf j"
-    }
 
 
 type alias Address =
@@ -151,15 +143,24 @@ view model =
 
 viewMail : ( Int, ( Mail, State ) ) -> Html Msg
 viewMail ( id, ( mail, state ) ) =
-    case state of
-        Short ->
-            viewShort id mail
+    let
+        seen =
+            List.member "\\Seen" mail.flags
+    in
+        Html.div
+            [ styles
+                [ opacity (if seen then (num 0.7) else (num 1)) ]
+            ]
+            [ case state of
+                Short ->
+                    viewShort id mail
 
-        Middle ->
-            viewMiddle id mail
+                Middle ->
+                    viewMiddle id mail
 
-        Full ->
-            viewFull id mail
+                Full ->
+                    viewFull id mail
+            ]
 
 
 viewShort : Int -> Mail -> Html Msg
