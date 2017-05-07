@@ -30,7 +30,7 @@
   };
 
   client.connect().then(() => {
-    client.listMessages("INBOX", "1:10", ["uid","flags", "envelope", "body[]"]).then((messages) => {
+    client.listMessages("INBOX", "1:*", ["uid","flags", "envelope", "body.peek[text]"]).then((messages) => {
       emails = messages;
     }).then(() => {
       client.logout();
@@ -47,14 +47,10 @@
     if (emails == null) {
       setTimeout(poll, 100);
     } else {
-      console.log(emails[0]);
-      app.ports.addMail.send(emails[0]);
-      app.ports.addMail.send(emails[1]);
-      app.ports.addMail.send(emails[2]);
-      app.ports.addMail.send(emails[3]);
-      app.ports.addMail.send(emails[4]);
-      app.ports.addMail.send(emails[5]);
-      app.ports.addMail.send(emails[6]);
+      for (var i = 0; i < emails.length; i++) {
+        app.ports.addMail.send(emails[i]);
+        console.log(emails[i]);
+      }
     }
   };
   poll();

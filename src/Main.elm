@@ -39,10 +39,11 @@ firstId =
 
 
 type alias Mail =
-    { from : Address
-    , to : Address
+    { from : List Address
+    , to : List Address
     , ccs : List Address
-    , subject : String
+    , bccs : List Address
+    , subject : Maybe String
     , body : Body
     , flags : List String
     }
@@ -199,6 +200,18 @@ viewMiddle id mail =
 viewFull : Int -> Mail -> Html Msg
 viewFull id mail =
     let
+        from =
+            List.head mail.from
+                |> Maybe.withDefault "(no sender)"
+
+        to =
+            List.head mail.to
+                |> Maybe.withDefault "(no recipient)"
+
+        subject =
+            mail.subject
+                |> Maybe.withDefault "(no subject)"
+
         fullHeader =
             Html.div
                 [ styles
@@ -207,9 +220,9 @@ viewFull id mail =
                     , paddingTop (px 5)
                     ]
                 ]
-                ([ viewTag "from" mail.from
-                 , viewTag "to" mail.to
-                 , viewTag "subject" mail.subject
+                ([ viewTag "from" from
+                 , viewTag "to" to
+                 , viewTag "subject" subject
                  ]
                     ++ ccs
                 )
@@ -252,7 +265,11 @@ shortHeader mail =
                 , color (rgba 0 0 0 0.52)
                 ]
             ]
-            [ Html.text mail.from ]
+            [ mail.from
+                |> List.head
+                |> Maybe.withDefault "(no sender)"
+                |> Html.text
+            ]
         , Html.div
             [ styles
                 [ fontSize (px 16)
@@ -260,12 +277,9 @@ shortHeader mail =
                 , fontWeight bold
                 ]
             ]
-            [ Html.text
-                (if mail.subject == "" then
-                    "(no subject)"
-                 else
-                    mail.subject
-                )
+            [ mail.subject
+                |> Maybe.withDefault "(no subject)"
+                |> Html.text
             ]
         ]
 
@@ -296,15 +310,10 @@ viewTag tag content =
 decodeMail : Decoder Mail
 decodeMail =
     decode Mail
-        |> requiredAt [ "envelope", "from" ]
-            (map (List.head >> Maybe.withDefault "")
-                (list (at [ "address" ] string))
-            )
-        |> requiredAt [ "envelope", "sender" ]
-            (map (List.head >> Maybe.withDefault "")
-                (list (at [ "address" ] string))
-            )
-        |> hardcoded []
-        |> hardcoded ""
-        |> requiredAt [ "body[]" ] string
+        |> requiredAt [ "envelope", "from" ] (list (at [ "address" ] string))
+        |> requiredAt [ "envelope", "sender" ] (list (at [ "address" ] string))
+        |> optionalAt [ "envelope", "cc" ] (list (at [ "address" ] string)) []
+        |> optionalAt [ "envelope", "bcc" ] (list (at [ "address" ] string)) []
+        |> optionalAt [ "envelope", "subject" ] (map Just string) Nothing
+        |> requiredAt [ "body[text]" ] string
         |> requiredAt [ "flags" ] (list string)
