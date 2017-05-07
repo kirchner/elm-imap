@@ -50,11 +50,17 @@ type alias Mail =
 decodeMail : Decoder Mail
 decodeMail =
     decode Mail
-        |> requiredAt [ "envelope", "from", "address" ] string
-        |> requiredAt [ "envelope", "to", "address" ] string
+        |> requiredAt [ "envelope", "from" ]
+            (map (List.head >> Maybe.withDefault "")
+                (list (at [ "address" ] string))
+            )
+        |> requiredAt [ "envelope", "sender" ]
+            (map (List.head >> Maybe.withDefault "")
+                (list (at [ "address" ] string))
+            )
         |> hardcoded []
-        |> requiredAt [ "envelope", "subject" ] string
-        |> requiredAt [ "envelope", "body" ] string
+        |> hardcoded ""
+        |> requiredAt [ "body[]" ] string
 
 
 type State

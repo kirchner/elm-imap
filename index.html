@@ -49,6 +49,12 @@
     } else {
       console.log(emails[0]);
       app.ports.addMail.send(emails[0]);
+      app.ports.addMail.send(emails[1]);
+      app.ports.addMail.send(emails[2]);
+      app.ports.addMail.send(emails[3]);
+      app.ports.addMail.send(emails[4]);
+      app.ports.addMail.send(emails[5]);
+      app.ports.addMail.send(emails[6]);
     }
   };
   poll();
